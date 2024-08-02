@@ -14,7 +14,6 @@ This project is a summary of the back-end trimester, covering authentication, No
 
 - **Start Date:** Aug 1, 2024, 6:00 AM
 - **End Date:** Aug 8, 2024, 6:00 AM
-- **Checker Release:** Aug 3, 2024, 12:00 AM
 
 ## Features
 
