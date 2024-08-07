@@ -1,5 +1,4 @@
-const { MongoClient } = require('mongodb');
-require('dotenv').config();
+import { MongoClient } from 'mongodb';
 
 class DBClient {
   constructor() {
@@ -9,8 +8,14 @@ class DBClient {
     const url = `mongodb://${host}:${port}`;
 
     this.client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
-    this.database = this.client.db(database);
-    this.client.connect().catch(console.error);
+    this.client.connect()
+      .then(() => {
+        this.db = this.client.db(database);
+        console.log('Connected to MongoDB');
+      })
+      .catch((err) => {
+        console.error('MongoDB connection error:', err);
+      });
   }
 
   isAlive() {
@@ -18,13 +23,23 @@ class DBClient {
   }
 
   async nbUsers() {
-    return this.database.collection('users').countDocuments();
+    try {
+      return await this.db.collection('users').countDocuments();
+    } catch (err) {
+      console.error('MongoDB nbUsers error:', err);
+      return 0;
+    }
   }
 
   async nbFiles() {
-    return this.database.collection('files').countDocuments();
+    try {
+      return await this.db.collection('files').countDocuments();
+    } catch (err) {
+      console.error('MongoDB nbFiles error:', err);
+      return 0;
+    }
   }
 }
 
 const dbClient = new DBClient();
-module.exports = dbClient;
+export default dbClient;
