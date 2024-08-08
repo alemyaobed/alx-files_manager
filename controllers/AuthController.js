@@ -3,6 +3,11 @@ import sha1 from 'sha1';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 
+function isValidBase64(str) {
+  // Check if the string matches the Base64 format
+  const base64Pattern = /^[A-Za-z0-9+/]+={0,2}$/;
+  return base64Pattern.test(str);
+}
 class AuthController {
   static async getConnect(req, res) {
     const authHeader = req.headers.authorization;
@@ -12,6 +17,12 @@ class AuthController {
     }
 
     const base64Credentials = authHeader.split(' ')[1];
+
+    // Validate if the Base64 string is correctly formatted
+    if (!isValidBase64(base64Credentials)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
     const [email, password] = credentials.split(':');
 
