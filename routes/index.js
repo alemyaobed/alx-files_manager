@@ -20,4 +20,7 @@ router.get('/users/me', UsersController.getMe);
 
 // The routes for files
 router.post('/files', FilesController.postUpload);
+router.get('/files', FilesController.getIndex);
+router.get('/files/:id', FilesController.getShow);
+
 export default router;

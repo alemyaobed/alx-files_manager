@@ -19,7 +19,18 @@ class FilesController {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { name, type, parentId = 0, isPublic = false, data } = req.body;
+    const user = await dbClient.db.collection('users').findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const {
+      name,
+      type,
+      parentId = 0,
+      isPublic = false,
+      data,
+    } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Missing name' });
@@ -75,6 +86,73 @@ class FilesController {
       isPublic: newFile.isPublic,
       parentId: newFile.parentId,
     });
+  }
+
+  static async getShow(req, res) {
+    const token = req.headers['x-token'];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = await redisClient.get(`auth_${token}`);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const user = await dbClient.db.collection('users').findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const file = await dbClient.db.collection('files').findOne({ _id: new ObjectId(req.params.id), userId: user._id });
+    if (!file) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    return res.json(file);
+  }
+
+  static async getIndex(req, res) {
+    const token = req.headers['x-token'];
+    const { parentId = 0, page = 0 } = req.query;
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = await redisClient.get(`auth_${token}`);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const user = await dbClient.db.collection('users').findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Define the limit for pagination
+    const limit = 20; // Max 20 items per page
+    const skip = page * limit; // Calculate how many documents to skip
+
+    const files = await dbClient.db.collection('files').aggregate([
+      {
+        $match: {
+          userId: user._id,
+          parentId: parentId === 0 ? 0 : new ObjectId(parentId), // Filter by parentId
+        },
+      },
+      {
+        $skip: skip, // Skip documents based on the page
+      },
+      {
+        $limit: limit, // Limit the number of documents returned
+      },
+    ]).toArray();
+
+    return res.json(files);
   }
 }
 
